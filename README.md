@@ -78,3 +78,47 @@ Notes
 
 License
 - MIT — see `LICENSE`.
+
+One-command setup
+- `./setup-docker.sh` — interactive Docker build/run helper.
+- `./publish-feed.sh` — publish the `app.bsky.feed.generator` record (after Docker is running and DNS/TLS are set).
+
+setup-docker.sh
+- Prompts for FEED_DOMAIN, ADMIN, WHITELIST (or a whitelist file), host port, and AppView base.
+- Builds the image, replaces any old container, and starts a new one bound to 127.0.0.1:<port>.
+- Prints the did:web JSON and Nginx hints to finish public hosting.
+
+publish-feed.sh
+- Prompts for domain (to compute `did:web:<domain>`), handle and app password, feed rkey, name, and description.
+- Creates a session on your PDS (default `https://bsky.social`) and publishes `app.bsky.feed.generator`.
+- Prints the feed URI (`at://...`) and a direct link you can open in Bluesky.
+
+Systemd (optional)
+- Example unit at `/etc/systemd/system/bsky-for-you.service`:
+```
+[Unit]
+Description=Bluesky For You Feed (Docker)
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Restart=always
+RestartSec=5
+TimeoutStartSec=0
+ExecStartPre=-/usr/bin/docker rm -f bsky-for-you
+ExecStart=/usr/bin/docker run --name bsky-for-you --restart unless-stopped \
+  -p 127.0.0.1:3000:3000 \
+  -e FEED_DOMAIN=blue.j4ck.xyz \
+  -e ADMIN=did:plc:YOUR_ADMIN_DID \
+  -e WHITELIST=did:plc:FRIEND1,did:plc:FRIEND2 \
+  -e APPVIEW_BASE=https://public.api.bsky.app \
+  bsky-for-you
+ExecStop=/usr/bin/docker stop bsky-for-you
+
+[Install]
+WantedBy=multi-user.target
+```
+- Enable:
+  - `sudo systemctl daemon-reload`
+  - `sudo systemctl enable --now bsky-for-you`
+  - Logs: `journalctl -u bsky-for-you -f`
