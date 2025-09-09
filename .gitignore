@@ -24,3 +24,8 @@ coverage/
 *.log
 *.tgz
 
+# Do not include the imported reference repo
+the-algorithm/
+
+# Local deploy key (ephemeral, not committed)
+.deploy_key*
