@@ -24,6 +24,28 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, { ok: true });
     }
 
+    if (url.pathname === '/.well-known/did.json') {
+      const did = config.serviceDid;
+      const serviceEndpoint = `${config.feedScheme}://${config.feedDomain}`;
+      return sendJson(res, 200, {
+        '@context': ['https://www.w3.org/ns/did/v1'],
+        id: did,
+        service: [
+          {
+            id: '#bsky_fg',
+            type: 'BskyFeedGenerator',
+            serviceEndpoint,
+          },
+        ],
+      });
+    }
+
+    if (url.pathname === '/xrpc/app.bsky.feed.describeFeedGenerator') {
+      const did = config.serviceDid;
+      // Optionally list known feeds; we return empty for simplicity
+      return sendJson(res, 200, { did, feeds: [] });
+    }
+
     // Feed skeleton endpoint expected by AppView
     if (url.pathname === '/xrpc/app.bsky.feed.getFeedSkeleton') {
       const viewer = url.searchParams.get('viewer') || '';
@@ -46,6 +68,8 @@ const server = http.createServer(async (req, res) => {
         name: 'bluesky-for-you-feed',
         version: '0.1.0',
         endpoints: ['/xrpc/app.bsky.feed.getFeedSkeleton', '/health'],
+        did: config.serviceDid,
+        domain: config.feedDomain,
       });
     }
 
@@ -59,4 +83,3 @@ const server = http.createServer(async (req, res) => {
 server.listen(config.port, () => {
   console.log(`Feed generator listening on :${config.port}`);
 });
-
