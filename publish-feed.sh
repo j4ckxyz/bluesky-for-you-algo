@@ -73,15 +73,7 @@ read -rp "Feed rkey [for-you]: " RKEY || true; RKEY=${RKEY:-for-you}
 read -rp "Display name [For You]: " DISPLAY_NAME || true; DISPLAY_NAME=${DISPLAY_NAME:-For You}
 read -rp "Description [In/out-network with social proof.]: " DESCRIPTION || true; DESCRIPTION=${DESCRIPTION:-In/out-network with social proof.}
 
-echo "Checking PDS: $PDS_BASE"
-CODE=0; req GET "${PDS_BASE%/}/xrpc/com.atproto.server.describeServer" "" /tmp/pds.json CODE
-if [[ "$CODE" != "200" ]]; then
-  echo "PDS check failed (HTTP $CODE). Body:" >&2
-  sed -n '1,160p' /tmp/pds.json >&2
-  exit 1
-fi
-
-# Optional: check did:web presence and warn if mismatch
+# Optional: check did:web presence and warn if mismatch (non-fatal)
 if CODE2=$(curl -sS -o /tmp/did.json -w "%{http_code}" "https://${FEED_DOMAIN}/.well-known/did.json"); then
   if [[ "$CODE2" == "200" ]]; then
     IDVAL=""; parse_json /tmp/did.json id IDVAL
